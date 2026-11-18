@@ -15,91 +15,86 @@ const tableBody =
         "#resultsTable tbody"
     );
 
-let uploadedFiles = [];
-
-/*
-    Cache uploaded files
-*/
+let files = [];
 
 upload.addEventListener(
     "change",
     (e) => {
 
-        uploadedFiles =
+        files =
             Array.from(e.target.files);
 
         statusLabel.textContent =
-            `${uploadedFiles.length} PDF(s) selected`;
-
+            `${files.length} PDF(s) loaded`;
     }
 );
-
-/*
-    Build table
-*/
 
 extractBtn.addEventListener(
     "click",
-    () => {
+    async () => {
 
         tableBody.innerHTML = "";
 
-        uploadedFiles.forEach(
-            (file) => {
+        for (const file of files) {
 
-                const row =
-                    document.createElement("tr");
+            const sample =
+                file.name.replace(
+                    /\.pdf$/i,
+                    ""
+                );
 
-                row.innerHTML = `
-                    <td>${file.name}</td>
-                    <td>Ready</td>
-                `;
+            const row =
+                document.createElement("tr");
 
-                tableBody.appendChild(row);
-            }
-        );
+            row.innerHTML = `
+                <td>${sample}</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            `;
+
+            tableBody.appendChild(row);
+        }
 
         statusLabel.textContent =
-            `${uploadedFiles.length} file(s) loaded`;
+            `${files.length} file(s) processed`;
     }
 );
-
-/*
-    Copy table to clipboard
-*/
 
 copyBtn.addEventListener(
     "click",
     async () => {
 
         let output =
-            "Filename\tStatus\n";
+            "Sample\tSalbolt\tSieve\tResidue\tWater\tPenetration\n";
 
         const rows =
             document.querySelectorAll(
                 "#resultsTable tbody tr"
             );
 
-        rows.forEach(
-            (row) => {
+        rows.forEach(row => {
 
-                const cells =
-                    row.querySelectorAll("td");
+            const cells =
+                row.querySelectorAll("td");
 
-                output +=
-                    cells[0].textContent +
-                    "\t" +
-                    cells[1].textContent +
-                    "\n";
-            }
-        );
+            const values =
+                Array.from(cells)
+                     .map(
+                        x => x.textContent
+                     );
 
-        await navigator.clipboard.writeText(
-            output
-        );
+            output +=
+                values.join("\t") + "\n";
+        });
+
+        await navigator.clipboard
+            .writeText(output);
 
         alert(
-            "Table copied to clipboard."
+            "Copied to clipboard"
         );
     }
 );
