@@ -29,59 +29,6 @@ const previewCtx =
 let files = [];
 
 //--------------------------------------
-// PSV Template
-//--------------------------------------
-
-const PSV_TEMPLATE = {
-    
-    salbolt: {
-    
-        x1: 0.2155,
-        y1: 0.1795,
-    
-        x2: 0.3502,
-        y2: 0.1898,    
-
-        whitelist:
-            "0123456789.",
-
-        regex:
-            /^\d{2,3}\.\d{2}$/
-    },
-
-    sieve: {
-    
-        x1: 0.2155,
-        y1: 0.2896,
-    
-        x2: 0.3502,
-        y2: 0.3032,
-
-        whitelist:
-            "0123456789.",
-
-        regex:
-            /^\d(\.\d{1,2})?$/
-    },
-
-    residue: {
-    
-        x1: 0.2155,
-        y1: 0.5261,
-    
-        x2: 0.3502,
-        y2: 0.5567,
-
-        whitelist:
-            "0123456789.",
-
-        regex:
-            /^\d{2}\.\d$/
-    }
-
-};
-
-//--------------------------------------
 // File Upload
 //--------------------------------------
 
@@ -157,61 +104,6 @@ previewCtx.lineTo(
 
 previewCtx.stroke();
 
-async function extractField(
-    pageCanvas,
-    field
-)
-{
-    const crop =
-        document.createElement("canvas");
-
-    const SCALE = 5;
-
-    const x1 =
-        field.x1 * pageCanvas.width;
-    
-    const y1 =
-        field.y1 * pageCanvas.height;
-    
-    const x2 =
-        field.x2 * pageCanvas.width;
-    
-    const y2 =
-        field.y2 * pageCanvas.height;
-    
-    const width =
-        x2 - x1;
-    
-    const height =
-        y2 - y1;
-    
-    crop.width =
-        width * SCALE;
-    
-    crop.height =
-        height * SCALE;
-    
-    const cropCtx =
-        crop.getContext("2d");
-    
-    cropCtx.drawImage(
-    
-        pageCanvas,
-    
-        x1,
-        y1,
-    
-        width,
-        height,
-    
-        0,
-        0,
-    
-        crop.width,
-        crop.height
-    
-    );
-
     const result =
         await Tesseract.recognize(
             crop,
@@ -228,17 +120,6 @@ async function extractField(
         .replace(/[^\d.]/g, "")
         .trim();
 }
-
-function drawTemplateBoxes()
-{
-    const colours = {
-
-        salbolt: "red",
-
-        sieve: "blue",
-
-        residue: "green"
-    };
 
     Object.entries(
         PSV_TEMPLATE
@@ -296,22 +177,64 @@ extractBtn.addEventListener(
     "click",
     async () => {
 
-        tableBody.innerHTML = "";
+        if (files.length === 0) {
+            alert("Select a PDF first.");
+            return;
+        }
 
-        for (const file of files) {
+        const file = files[0];
 
-            statusLabel.textContent =
-                `Reading ${file.name}`;
+        statusLabel.textContent =
+            `Running OCR on ${file.name}`;
 
-            const bytes =
-                await file.arrayBuffer();
+        const bytes =
+            await file.arrayBuffer();
 
-            const pdf =
-                await pdfjsLib
-                .getDocument({
-                    data: bytes
-                })
-                .promise;
+        const pdf =
+            await pdfjsLib
+            .getDocument({
+                data: bytes
+            })
+            .promise;
+
+        const page =
+            await pdf.getPage(1);
+
+        const viewport =
+            page.getViewport({
+                scale: 5
+            });
+
+        previewCanvas.width =
+            viewport.width;
+
+        previewCanvas.height =
+            viewport.height;
+
+        await page.render({
+            canvasContext: previewCtx,
+            viewport
+        }).promise;
+
+        const result =
+            await Tesseract.recognize(
+                previewCanvas,
+                "eng"
+            );
+
+        document.getElementById(
+            "ocrText"
+        ).value =
+            result.data.text;
+
+        console.log(
+            result.data.text
+        );
+
+        statusLabel.textContent =
+            "OCR Complete";
+    }
+);
 
             const page =
                 await pdf.getPage(1);
@@ -376,23 +299,19 @@ extractBtn.addEventListener(
                 );
             });
 
-            const salbolt =
-                await extractField(
+            const result =
+                await Tesseract.recognize(
                     canvas,
-                    PSV_TEMPLATE.salbolt
+                    "eng",
+                    {
+                        tessedit_pageseg_mode: 1
+                    }
                 );
 
-            const sieve =
-                await extractField(
-                    canvas,
-                    PSV_TEMPLATE.sieve
-                );
-
-            const residue =
-                await extractField(
-                    canvas,
-                    PSV_TEMPLATE.residue
-                );
+            document
+    .getElementById("ocrText")
+    .value =
+        result.data.text;
 
             const sample =
                 file.name.replace(
