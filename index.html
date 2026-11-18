@@ -1,55 +1,79 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
 
     <meta charset="UTF-8">
 
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
     <title>Lab Result Extractor</title>
 
+    <!-- PDF.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
+    <!-- Tesseract -->
     <script src="https://unpkg.com/tesseract.js@5/dist/tesseract.min.js"></script>
 
     <link rel="stylesheet" href="style.css">
 
 </head>
+
 <body>
 
-    <h1>PSV Result Extractor</h1>
+    <h1>Lab Result Extractor</h1>
 
-    <input
-        type="file"
-        id="pdfUpload"
-        accept=".pdf"
-        multiple>
+    <div class="controls">
 
-    <button id="extractBtn">
-        Extract Results
-    </button>
+        <input
+            type="file"
+            id="pdfUpload"
+            accept=".pdf"
+            multiple>
 
-    <button id="copyBtn">
-        Copy to Clipboard
-    </button>
+        <button id="extractBtn">
+            Run OCR
+        </button>
+
+        <button id="copyBtn">
+            Copy OCR Text
+        </button>
+
+    </div>
 
     <p id="status">
-        Upload PSV reports...
+        Upload one or more PDFs.
     </p>
 
+    <hr>
+
     <h2>PDF Preview</h2>
-    
+
     <canvas id="previewCanvas"></canvas>
+
+    <hr>
+
+    <h2>OCR Output</h2>
+
+    <textarea
+        id="ocrText"
+        rows="20"
+        placeholder="OCR results will appear here...">
+    </textarea>
+
+    <hr>
+
+    <h2>Processed Files</h2>
 
     <table id="resultsTable">
 
         <thead>
-
             <tr>
                 <th>Sample</th>
-                <th>Salbolt</th>
-                <th>Sieve</th>
-                <th>Residue</th>
+                <th>OCR Confidence</th>
             </tr>
-
         </thead>
 
         <tbody></tbody>
@@ -59,4 +83,5 @@
     <script src="app.js"></script>
 
 </body>
+
 </html>
