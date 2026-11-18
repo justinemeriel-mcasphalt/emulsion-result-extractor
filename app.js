@@ -25,14 +25,14 @@ let files = [];
 //--------------------------------------
 
 const PSV_TEMPLATE = {
-
+    
     salbolt: {
-
-        x1: 549,
-        y1: 592,
-
-        x2: 892,
-        y2: 626,
+    
+        x1: 0.2155,
+        y1: 0.1795,
+    
+        x2: 0.3502,
+        y2: 0.1898,    
 
         whitelist:
             "0123456789.",
@@ -42,12 +42,12 @@ const PSV_TEMPLATE = {
     },
 
     sieve: {
-
-        x1: 549,
-        y1: 955,
-
-        x2: 892,
-        y2: 1000,
+    
+        x1: 0.2155,
+        y1: 0.2896,
+    
+        x2: 0.3502,
+        y2: 0.3032,
 
         whitelist:
             "0123456789.",
@@ -57,12 +57,12 @@ const PSV_TEMPLATE = {
     },
 
     residue: {
-
-        x1: 549,
-        y1: 1735,
-
-        x2: 892,
-        y2: 1836,
+    
+        x1: 0.2155,
+        y1: 0.5261,
+    
+        x2: 0.3502,
+        y2: 0.5567,
 
         whitelist:
             "0123456789.",
@@ -105,31 +105,49 @@ async function extractField(
 
     const SCALE = 5;
 
+    const x1 =
+        field.x1 * pageCanvas.width;
+    
+    const y1 =
+        field.y1 * pageCanvas.height;
+    
+    const x2 =
+        field.x2 * pageCanvas.width;
+    
+    const y2 =
+        field.y2 * pageCanvas.height;
+    
+    const width =
+        x2 - x1;
+    
+    const height =
+        y2 - y1;
+    
     crop.width =
-        (field.x2 - field.x1) * SCALE;
-
+        width * SCALE;
+    
     crop.height =
-        (field.y2 - field.y1) * SCALE;
-
+        height * SCALE;
+    
     const cropCtx =
         crop.getContext("2d");
-
+    
     cropCtx.drawImage(
-
+    
         pageCanvas,
-
-        field.x1,
-        field.y1,
-
-        field.x2 - field.x1,
-        field.y2 - field.y1,
-
+    
+        x1,
+        y1,
+    
+        width,
+        height,
+    
         0,
         0,
-
+    
         crop.width,
         crop.height
-
+    
     );
 
     const result =
@@ -203,6 +221,34 @@ extractBtn.addEventListener(
                 viewport
 
             }).promise;
+
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 3;
+            
+            Object.values(PSV_TEMPLATE)
+            .forEach(field => {
+            
+                const x =
+                    field.x1 * canvas.width;
+            
+                const y =
+                    field.y1 * canvas.height;
+            
+                const width =
+                    (field.x2 - field.x1)
+                    * canvas.width;
+            
+                const height =
+                    (field.y2 - field.y1)
+                    * canvas.height;
+            
+                ctx.strokeRect(
+                    x,
+                    y,
+                    width,
+                    height
+                );
+            });
 
             const salbolt =
                 await extractField(
