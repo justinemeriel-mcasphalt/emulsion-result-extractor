@@ -59,7 +59,7 @@ async function renderFirstPage(page)
 {
     const viewport =
         page.getViewport({
-            scale: 5
+            scale: 1.5
         });
 
     previewCanvas.width =
