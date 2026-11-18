@@ -1,35 +1,42 @@
 body {
+
     font-family: Arial, sans-serif;
+
     margin: 30px;
 }
 
-h1 {
-    margin-bottom: 20px;
-}
-
 button {
-    margin-top: 10px;
+
+    padding: 10px 16px;
+
     margin-right: 10px;
-    padding: 10px 15px;
 }
 
 table {
-    margin-top: 20px;
+
     border-collapse: collapse;
-    width: 800px;
+
+    margin-top: 20px;
+
+    width: 900px;
 }
 
 th,
 td {
+
     border: 1px solid #ccc;
+
     padding: 8px;
 }
 
 th {
-    background: #f5f5f5;
+
+    background-color: #f5f5f5;
 }
 
 #status {
+
     margin-top: 15px;
+
     font-weight: bold;
 }
