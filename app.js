@@ -104,6 +104,11 @@ upload.addEventListener(
 //--------------------------------------
 async function renderPreview(page)
 {
+    console.log(
+    "Preview Size:",
+    previewCanvas.width,
+    previewCanvas.height
+);  
     const viewport =
         page.getViewport({
             scale: 3
@@ -122,6 +127,35 @@ async function renderPreview(page)
 
     drawTemplateBoxes();
 }
+
+previewCtx.strokeStyle = "yellow";
+
+previewCtx.beginPath();
+previewCtx.moveTo(
+    previewCanvas.width / 2,
+    0
+);
+
+previewCtx.lineTo(
+    previewCanvas.width / 2,
+    previewCanvas.height
+);
+
+previewCtx.stroke();
+
+previewCtx.beginPath();
+
+previewCtx.moveTo(
+    0,
+    previewCanvas.height / 2
+);
+
+previewCtx.lineTo(
+    previewCanvas.width,
+    previewCanvas.height / 2
+);
+
+previewCtx.stroke();
 
 async function extractField(
     pageCanvas,
