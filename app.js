@@ -18,6 +18,14 @@ const tableBody =
         "#resultsTable tbody"
     );
 
+const previewCanvas =
+    document.getElementById(
+        "previewCanvas"
+    );
+
+const previewCtx =
+    previewCanvas.getContext("2d");
+
 let files = [];
 
 //--------------------------------------
@@ -94,6 +102,26 @@ upload.addEventListener(
 //--------------------------------------
 // OCR Helper
 //--------------------------------------
+async function renderPreview(page)
+{
+    const viewport =
+        page.getViewport({
+            scale: 3
+        });
+
+    previewCanvas.width =
+        viewport.width;
+
+    previewCanvas.height =
+        viewport.height;
+
+    await page.render({
+        canvasContext: previewCtx,
+        viewport
+    }).promise;
+
+    drawTemplateBoxes();
+}
 
 async function extractField(
     pageCanvas,
@@ -167,6 +195,65 @@ async function extractField(
         .trim();
 }
 
+function drawTemplateBoxes()
+{
+    const colours = {
+
+        salbolt: "red",
+
+        sieve: "blue",
+
+        residue: "green"
+    };
+
+    Object.entries(
+        PSV_TEMPLATE
+    ).forEach(
+        ([name, field]) =>
+    {
+
+        const x =
+            field.x1 *
+            previewCanvas.width;
+
+        const y =
+            field.y1 *
+            previewCanvas.height;
+
+        const width =
+            (field.x2 - field.x1)
+            * previewCanvas.width;
+
+        const height =
+            (field.y2 - field.y1)
+            * previewCanvas.height;
+
+        previewCtx.strokeStyle =
+            colours[name];
+
+        previewCtx.lineWidth = 4;
+
+        previewCtx.strokeRect(
+            x,
+            y,
+            width,
+            height
+        );
+
+        previewCtx.fillStyle =
+            colours[name];
+
+        previewCtx.font =
+            "24px Arial";
+
+        previewCtx.fillText(
+            name,
+            x,
+            y - 10
+        );
+    });
+}
+
 //--------------------------------------
 // Main Extraction
 //--------------------------------------
@@ -194,6 +281,11 @@ extractBtn.addEventListener(
 
             const page =
                 await pdf.getPage(1);
+
+            if (tableBody.children.length === 0)
+            {
+                await renderPreview(page);
+            }
 
             const viewport =
                 page.getViewport({
