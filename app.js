@@ -26,60 +26,12 @@ const previewCanvas =
 const previewCtx =
     previewCanvas.getContext("2d");
 
+const ocrText =
+    document.getElementById(
+        "ocrText"
+    );
+
 let files = [];
-
-//--------------------------------------
-// PSV Template
-//--------------------------------------
-
-const PSV_TEMPLATE = {
-    
-    salbolt: {
-    
-        x1: 0.2155,
-        y1: 0.1795,
-    
-        x2: 0.3502,
-        y2: 0.1898,    
-
-        whitelist:
-            "0123456789.",
-
-        regex:
-            /^\d{2,3}\.\d{2}$/
-    },
-
-    sieve: {
-    
-        x1: 0.2155,
-        y1: 0.2896,
-    
-        x2: 0.3502,
-        y2: 0.3032,
-
-        whitelist:
-            "0123456789.",
-
-        regex:
-            /^\d(\.\d{1,2})?$/
-    },
-
-    residue: {
-    
-        x1: 0.2155,
-        y1: 0.5261,
-    
-        x2: 0.3502,
-        y2: 0.5567,
-
-        whitelist:
-            "0123456789.",
-
-        regex:
-            /^\d{2}\.\d$/
-    }
-
-};
 
 //--------------------------------------
 // File Upload
@@ -95,23 +47,19 @@ upload.addEventListener(
             );
 
         statusLabel.textContent =
-            `${files.length} file(s) loaded`;
+            `${files.length} PDF(s) selected`;
     }
 );
 
 //--------------------------------------
-// OCR Helper
+// Render PDF Page
 //--------------------------------------
-async function renderPreview(page)
+
+async function renderFirstPage(page)
 {
-    console.log(
-    "Preview Size:",
-    previewCanvas.width,
-    previewCanvas.height
-);  
     const viewport =
         page.getViewport({
-            scale: 3
+            scale: 5
         });
 
     previewCanvas.width =
@@ -121,209 +69,80 @@ async function renderPreview(page)
         viewport.height;
 
     await page.render({
-        canvasContext: previewCtx,
+
+        canvasContext:
+            previewCtx,
+
         viewport
+
     }).promise;
 
-    drawTemplateBoxes();
-}
-
-previewCtx.strokeStyle = "yellow";
-
-previewCtx.beginPath();
-previewCtx.moveTo(
-    previewCanvas.width / 2,
-    0
-);
-
-previewCtx.lineTo(
-    previewCanvas.width / 2,
-    previewCanvas.height
-);
-
-previewCtx.stroke();
-
-previewCtx.beginPath();
-
-previewCtx.moveTo(
-    0,
-    previewCanvas.height / 2
-);
-
-previewCtx.lineTo(
-    previewCanvas.width,
-    previewCanvas.height / 2
-);
-
-previewCtx.stroke();
-
-async function extractField(
-    pageCanvas,
-    field
-)
-{
-    const crop =
-        document.createElement("canvas");
-
-    const SCALE = 5;
-
-    const x1 =
-        field.x1 * pageCanvas.width;
-    
-    const y1 =
-        field.y1 * pageCanvas.height;
-    
-    const x2 =
-        field.x2 * pageCanvas.width;
-    
-    const y2 =
-        field.y2 * pageCanvas.height;
-    
-    const width =
-        x2 - x1;
-    
-    const height =
-        y2 - y1;
-    
-    crop.width =
-        width * SCALE;
-    
-    crop.height =
-        height * SCALE;
-    
-    const cropCtx =
-        crop.getContext("2d");
-    
-    cropCtx.drawImage(
-    
-        pageCanvas,
-    
-        x1,
-        y1,
-    
-        width,
-        height,
-    
-        0,
-        0,
-    
-        crop.width,
-        crop.height
-    
+    console.log(
+        "Canvas Size:",
+        previewCanvas.width,
+        previewCanvas.height
     );
-
-    const result =
-        await Tesseract.recognize(
-            crop,
-            "eng",
-            {
-                tessedit_pageseg_mode: 7,
-
-                tessedit_char_whitelist:
-                    field.whitelist
-            }
-        );
-
-    return result.data.text
-        .replace(/[^\d.]/g, "")
-        .trim();
-}
-
-function drawTemplateBoxes()
-{
-    const colours = {
-
-        salbolt: "red",
-
-        sieve: "blue",
-
-        residue: "green"
-    };
-
-    Object.entries(
-        PSV_TEMPLATE
-    ).forEach(
-        ([name, field]) =>
-    {
-
-        const x =
-            field.x1 *
-            previewCanvas.width;
-
-        const y =
-            field.y1 *
-            previewCanvas.height;
-
-        const width =
-            (field.x2 - field.x1)
-            * previewCanvas.width;
-
-        const height =
-            (field.y2 - field.y1)
-            * previewCanvas.height;
-
-        previewCtx.strokeStyle =
-            colours[name];
-
-        previewCtx.lineWidth = 4;
-
-        previewCtx.strokeRect(
-            x,
-            y,
-            width,
-            height
-        );
-
-        previewCtx.fillStyle =
-            colours[name];
-
-        previewCtx.font =
-            "24px Arial";
-
-        previewCtx.fillText(
-            name,
-            x,
-            y - 10
-        );
-    });
 }
 
 //--------------------------------------
-// Main Extraction
+// OCR PDF
 //--------------------------------------
 
 extractBtn.addEventListener(
     "click",
     async () => {
 
+        if (files.length === 0)
+        {
+            alert(
+                "Select PDF files first."
+            );
+
+            return;
+        }
+
         tableBody.innerHTML = "";
 
-        for (const file of files) {
-
+        for (const file of files)
+        {
             statusLabel.textContent =
-                `Reading ${file.name}`;
+                `Processing ${file.name}`;
+
+            //----------------------------------
+            // Load PDF
+            //----------------------------------
 
             const bytes =
                 await file.arrayBuffer();
 
             const pdf =
                 await pdfjsLib
-                .getDocument({
-                    data: bytes
-                })
-                .promise;
+                    .getDocument({
+                        data: bytes
+                    })
+                    .promise;
 
             const page =
                 await pdf.getPage(1);
 
-            if (tableBody.children.length === 0)
+            //----------------------------------
+            // Show first PDF in preview
+            //----------------------------------
+
+            if (
+                tableBody.children.length === 0
+            )
             {
-                await renderPreview(page);
+                await renderFirstPage(page);
             }
+
+            //----------------------------------
+            // Render page to hidden canvas
+            //----------------------------------
 
             const viewport =
                 page.getViewport({
-                    scale: 3
+                    scale: 5
                 });
 
             const canvas =
@@ -348,51 +167,34 @@ extractBtn.addEventListener(
 
             }).promise;
 
-            ctx.strokeStyle = "red";
-            ctx.lineWidth = 3;
-            
-            Object.values(PSV_TEMPLATE)
-            .forEach(field => {
-            
-                const x =
-                    field.x1 * canvas.width;
-            
-                const y =
-                    field.y1 * canvas.height;
-            
-                const width =
-                    (field.x2 - field.x1)
-                    * canvas.width;
-            
-                const height =
-                    (field.y2 - field.y1)
-                    * canvas.height;
-            
-                ctx.strokeRect(
-                    x,
-                    y,
-                    width,
-                    height
-                );
-            });
+            //----------------------------------
+            // OCR Entire Page
+            //----------------------------------
 
-            const salbolt =
-                await extractField(
+            statusLabel.textContent =
+                `OCR: ${file.name}`;
+
+            const result =
+                await Tesseract.recognize(
                     canvas,
-                    PSV_TEMPLATE.salbolt
+                    "eng"
                 );
 
-            const sieve =
-                await extractField(
-                    canvas,
-                    PSV_TEMPLATE.sieve
-                );
+            //----------------------------------
+            // Show OCR text
+            //----------------------------------
 
-            const residue =
-                await extractField(
-                    canvas,
-                    PSV_TEMPLATE.residue
-                );
+            ocrText.value =
+                result.data.text;
+
+            console.log(
+                "Confidence:",
+                result.data.confidence
+            );
+
+            //----------------------------------
+            // Results table
+            //----------------------------------
 
             const sample =
                 file.name.replace(
@@ -401,21 +203,22 @@ extractBtn.addEventListener(
                 );
 
             const row =
-                document.createElement("tr");
+                document.createElement(
+                    "tr"
+                );
 
             row.innerHTML = `
                 <td>${sample}</td>
-                <td>${salbolt}</td>
-                <td>${sieve}</td>
-                <td>${residue}</td>
+                <td>${Math.round(result.data.confidence)}%</td>
             `;
 
-            tableBody
-                .appendChild(row);
+            tableBody.appendChild(
+                row
+            );
         }
 
         statusLabel.textContent =
-            "Extraction Complete";
+            "OCR Complete";
     }
 );
 
@@ -427,37 +230,15 @@ copyBtn.addEventListener(
     "click",
     async () => {
 
-        let output =
-            "Sample\tSalbolt\tSieve\tResidue\n";
+        const text =
+            ocrText.value;
 
-        const rows =
-            document.querySelectorAll(
-                "#resultsTable tbody tr"
-            );
-
-        rows.forEach(
-            row => {
-
-                const cells =
-                    row.querySelectorAll("td");
-
-                const values =
-                    Array.from(cells)
-                        .map(
-                            x => x.textContent
-                        );
-
-                output +=
-                    values.join("\t")
-                    + "\n";
-            }
-        );
-
-        await navigator.clipboard
-            .writeText(output);
+        await navigator
+            .clipboard
+            .writeText(text);
 
         alert(
-            "Copied to clipboard"
+            "OCR text copied."
         );
     }
 );
